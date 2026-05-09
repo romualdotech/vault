@@ -1046,7 +1046,7 @@ async function unlockVault() {
     return;
   }
   try {
-    showLoadingOverlay("Unlocking vault...", "Decrypting and loading your data securely.");
+    showLoadingOverlay("", "");
 
     state.masterPassword = $("masterPassword").value;
 
