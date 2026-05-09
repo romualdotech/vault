@@ -388,6 +388,22 @@
             </div>
           </div>
           <div class="panel">
+            <div class="panel-head"><h3>Google Authenticator</h3></div>
+            <div class="panel-body form">
+              <p class="muted">Generate a setup key and QR code for Google Authenticator.</p>
+              <button id="generateTotpBtn" class="btn secondary" type="button">Generate setup key</button>
+              <div class="totp-setup">
+                <canvas id="totpQr" width="190" height="190" style="display:block; margin:12px auto 6px; border:1px solid #ccc; background:#fff;"></canvas>
+                <label for="totpManualKey">Manual setup key</label>
+                <textarea id="totpManualKey" readonly rows="2" style="width:100%; font-family:monospace; letter-spacing:0.2em;"></textarea>
+                <label for="totpVerifyCode">Verify code</label>
+                <input id="totpVerifyCode" inputmode="numeric" maxlength="6" placeholder="000000">
+                <button id="verifyTotpSetupBtn" class="btn" type="button">Verify code</button>
+                <div id="totpStatus" class="status"></div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
             <div class="panel-head"><h3>Device Logins</h3></div>
             <div class="panel-body">
               <p class="muted">Track devices that have logged into your vault. The current device is highlighted.</p>
