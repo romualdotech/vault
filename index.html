@@ -393,7 +393,7 @@
               <p class="muted">Generate a setup key and QR code for Google Authenticator.</p>
               <button id="generateTotpBtn" class="btn secondary" type="button">Generate setup key</button>
               <div class="totp-setup">
-                <canvas id="totpQr" width="190" height="190" style="display:block; margin:12px auto 6px; border:1px solid #ccc; background:#fff;"></canvas>
+                <div id="totpQr" style="width:190px; height:190px; margin:12px auto 6px; border:1px solid #ccc; background:#fff;"></div>
                 <label for="totpManualKey">Manual setup key</label>
                 <textarea id="totpManualKey" readonly rows="2" style="width:100%; font-family:monospace; letter-spacing:0.2em;"></textarea>
                 <label for="totpVerifyCode">Verify code</label>
@@ -485,7 +485,7 @@
     </main>
   </section>
 
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

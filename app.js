@@ -740,9 +740,22 @@ async function renderTotpQr(secret) {
   const issuer = encodeURIComponent("Personal Vault");
   const uri = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}&digits=6&period=30`;
   $("totpManualKey").value = secret.match(/.{1,4}/g).join(" ");
-  const canvas = $("totpQr");
+  const qrContainer = $("totpQr");
+  if (!qrContainer) return;
+  qrContainer.innerHTML = "";
   if (window.QRCode?.toCanvas) {
-    await window.QRCode.toCanvas(canvas, uri, { width: 190, margin: 1 });
+    await window.QRCode.toCanvas(qrContainer, uri, { width: 190, margin: 1 });
+  } else if (typeof window.QRCode === "function") {
+    new QRCode(qrContainer, {
+      text: uri,
+      width: 190,
+      height: 190,
+      colorDark: "#000000",
+      colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.L,
+    });
+  } else {
+    qrContainer.textContent = "QR library unavailable.";
   }
 }
 
