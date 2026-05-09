@@ -99,8 +99,27 @@
     </div>
   </section>
 
+  <div id="loadingOverlay" class="hide" aria-hidden="true">
+    <div class="loading-card">
+      <div class="spinner" aria-hidden="true"></div>
+      <div>
+        <div class="loading-title" id="loadingTitle">Working...</div>
+        <div class="loading-sub" id="loadingSub">Please wait.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="globalToast" class="hide" role="status" aria-live="polite">
+    <div class="dot" aria-hidden="true"></div>
+    <div style="display:flex; flex-direction:column; gap:2px;">
+      <div class="toast-text" id="globalToastText">Status</div>
+      <div class="toast-sub" id="globalToastSub"></div>
+    </div>
+  </div>
+
   <section id="appScreen" class="shell hide">
     <div id="successOverlay" class="success-overlay hide">
+
       <div class="success-card animate-in">
         <div class="checkmark-container">
           <svg class="animated-checkmark" viewBox="0 0 52 52" width="60" height="60">

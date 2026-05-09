@@ -64,7 +64,9 @@ const state = {
   inactivityTimer: null,
   currentDevice: null,
   devicesList: [],
+  toastTimeout: null,
 };
+
 
 // Device Detection Functions
 function detectDevice() {
@@ -402,12 +404,54 @@ function showOnly(id) {
   });
 }
 
+function showToast(message, kind = "") {
+  const toast = $("globalToast");
+  const toastText = $("globalToastText");
+  const toastSub = $("globalToastSub");
+  if (!toast || !toastText) return;
+
+  toastText.textContent = message;
+  if (toastSub) toastSub.textContent = kind ? kind.toUpperCase() : "";
+
+  toast.classList.remove("good", "bad", "show");
+  if (kind === "good") toast.classList.add("good");
+  if (kind === "bad") toast.classList.add("bad");
+
+  toast.classList.add("show");
+  clearTimeout(state.toastTimeout);
+  state.toastTimeout = setTimeout(() => toast.classList.remove("show"), 2600);
+}
+
+function showLoadingOverlay(title = "Working...", sub = "Please wait.") {
+  const overlay = $("loadingOverlay");
+  const titleEl = $("loadingTitle");
+  const subEl = $("loadingSub");
+  if (!overlay) return;
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = sub;
+  overlay.classList.remove("hide");
+  overlay.classList.add("show");
+}
+
+function hideLoadingOverlay() {
+  const overlay = $("loadingOverlay");
+  if (!overlay) return;
+  overlay.classList.add("hide");
+  overlay.classList.remove("show");
+}
+
 function setStatus(id, text, kind = "") {
   const el = $(id);
   if (!el) return;
   el.textContent = text;
   el.className = `status ${kind}`.trim();
+
+  // Also surface a global toast for major UX feedback
+  if (id === "signInStatus" || id === "gateStatus" || id === "syncStatus" || id === "entryStatus" || id === "securityStatus" || id === "recoveryGateStatus" || id === "recoveryStatus" || id === "recoverySetupPanel") {
+    if (text && text.trim()) showToast(text, kind === "" ? "" : kind);
+  }
 }
+
 
 function setGateMode(mode) {
   const recoveryMode = mode === "recovery";
@@ -988,7 +1032,10 @@ async function unlockVault() {
     return;
   }
   try {
+    showLoadingOverlay("Unlocking vault...", "Decrypting and loading your data securely.");
+
     state.masterPassword = $("masterPassword").value;
+
     let decryptedVault = null;
     
     if (state.cloudContainer.version === 3) {
@@ -1025,8 +1072,12 @@ async function unlockVault() {
   } catch (error) {
     console.error("Unlock vault error:", error);
     setStatus("gateStatus", `Wrong master password or damaged cloud vault: ${error.message}`, "bad");
+  } finally {
+    hideLoadingOverlay();
   }
 }
+
+
 
 async function createCloudVault() {
   const password = $("masterPassword").value;
