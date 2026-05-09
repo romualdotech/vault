@@ -719,17 +719,40 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function getFaviconUrl(url) {
+  try {
+    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+    const domain = urlObj.hostname;
+    // Try multiple common favicon locations
+    const faviconPaths = [
+      `https://${domain}/favicon.ico`,
+      `https://${domain}/favicon.png`,
+      `https://www.${domain}/favicon.ico`,
+      `https://www.${domain}/favicon.png`,
+      `https://${domain}/apple-touch-icon.png`,
+      `https://www.${domain}/apple-touch-icon.png`,
+    ];
+    // Return the first one - browser will handle loading and fallback
+    return faviconPaths[0];
+  } catch {
+    return "";
+  }
+}
+
 function findById(id) {
   return state.vault.entries.find((entry) => entry.id === id);
 }
 
 function formEntry() {
   const existing = $("entryId").value ? findById($("entryId").value) : null;
+  const website = $("website").value.trim();
+  const favicon = website ? getFaviconUrl(website) : "";
   return {
     id: $("entryId").value || uid(),
     label: $("label").value.trim(),
     category: $("category").value,
-    website: $("website").value.trim(),
+    website: website,
+    favicon: favicon,
     username: $("username").value.trim(),
     email: $("email").value.trim(),
     password: $("password").value,
@@ -790,11 +813,17 @@ function render() {
     const login = entry.email || entry.username || "";
     const visible = state.visiblePasswords.has(entry.id);
     const password = visible ? escapeHtml(entry.password) : "********";
+    const faviconHtml = entry.favicon ? `<img src="${escapeHtml(entry.favicon)}" alt="" class="entry-favicon" onerror="this.style.display='none'">` : "";
     return `
       <tr>
         <td>
-          <strong>${escapeHtml(entry.label)}</strong><br>
-          <span class="status">${escapeHtml(entry.website)}</span>
+          <div class="account-cell">
+            ${faviconHtml}
+            <div>
+              <strong>${escapeHtml(entry.label)}</strong><br>
+              <span class="status">${escapeHtml(entry.website)}</span>
+            </div>
+          </div>
         </td>
         <td><span class="pill">${escapeHtml(entry.category)}</span></td>
         <td>${escapeHtml(login)}</td>
@@ -1137,6 +1166,14 @@ function bindEvents() {
   $("signOutBtn").addEventListener("click", () => signOut(state.auth));
   $("gateSignOutBtn").addEventListener("click", () => signOut(state.auth));
   $("newEntryBtn").addEventListener("click", clearForm);
+  $("toggleFormBtn").addEventListener("click", () => {
+    const body = $("formPanelBody");
+    const isCollapsed = body.classList.contains("collapsed");
+    body.classList.toggle("collapsed");
+    const newIsCollapsed = !isCollapsed;
+    $("toggleFormBtn").textContent = newIsCollapsed ? "+" : "−";
+    $("toggleFormBtn").title = newIsCollapsed ? "Expand form" : "Collapse form";
+  });
   $("saveEntryBtn").addEventListener("click", async () => {
     const entry = formEntry();
     if (!entry.label) {
@@ -1183,10 +1220,11 @@ function bindEvents() {
       setTimeout(render, 700);
     }
     if (button.dataset.action === "delete") {
-      if (!confirm(`Delete ${entry.label}?`)) return;
+      if (!confirm("Are you sure you want to delete this credential?")) return;
       state.vault.entries = state.vault.entries.filter((item) => item.id !== entry.id);
       await saveCloudVault();
       clearForm();
+      showSuccessOverlay("Credential deleted", "The entry has been removed from your vault.");
     }
   });
   $("search").addEventListener("input", render);

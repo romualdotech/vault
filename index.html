@@ -171,9 +171,12 @@
           <section class="panel">
             <div class="panel-head">
               <h3 id="formTitle">New Entry</h3>
-              <span id="entryStatus" class="status"></span>
+              <div class="panel-actions">
+                <span id="entryStatus" class="status"></span>
+                <button id="toggleFormBtn" class="btn secondary small" title="Toggle form">−</button>
+              </div>
             </div>
-            <div class="panel-body">
+            <div id="formPanelBody" class="panel-body">
               <form id="entryForm" class="form">
                 <input id="entryId" type="hidden">
                 <label for="label">Account label</label>

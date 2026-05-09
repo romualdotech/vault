@@ -507,6 +507,16 @@ p {
   padding: 16px;
 }
 
+.panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-body.collapsed {
+  display: none;
+}
+
 .two {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -582,6 +592,19 @@ th {
 .masked {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   min-width: 84px;
+}
+
+.account-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.entry-favicon {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  flex-shrink: 0;
 }
 
 .backup-grid {
