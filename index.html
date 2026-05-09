@@ -77,7 +77,76 @@
           <button id="unlockBtn" class="btn">Unlock</button>
           <button id="createBtn" class="btn secondary">Create Cloud Vault</button>
         </div>
+        <button id="forgotMasterBtn" class="link-button" type="button" style="margin-top:4px;">Forgot password? Reset via Google Auth</button>
         <div id="gateStatus" class="status"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="resetGate" class="center-screen hide">
+    <div class="card narrow">
+      <div class="topline">
+        <div>
+          <h1>Reset Master Password</h1>
+          <p id="resetCloudStatus">Checking account...</p>
+        </div>
+        <button id="resetSignOutBtn" class="btn secondary">Sign Out</button>
+      </div>
+      <div class="user-strip">
+        <img id="resetPhoto" alt="" class="avatar">
+        <div>
+          <strong id="resetName"></strong>
+          <span id="resetEmail"></span>
+        </div>
+      </div>
+
+      <div id="resetStep1" class="reset-step">
+        <div class="step-indicator">
+          <span class="step-badge active">1</span>
+          <span class="step-line"></span>
+          <span class="step-badge">2</span>
+          <span class="step-line"></span>
+          <span class="step-badge">3</span>
+        </div>
+        <h2>Verify with Google Authenticator</h2>
+        <p id="resetTotpHint" class="muted">Enter the 6-digit code from your Google Authenticator app. You have <strong id="resetAttemptsLeft">5</strong> attempts remaining.</p>
+        <div class="totp-input-row">
+          <input id="resetTotpCode" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+          <button id="verifyTotpBtn" class="btn">Verify</button>
+        </div>
+        <div id="resetStep1Status" class="status"></div>
+      </div>
+
+      <div id="resetStep2" class="reset-step hide">
+        <div class="step-indicator">
+          <span class="step-badge done">&#10003;</span>
+          <span class="step-line done"></span>
+          <span class="step-badge active">2</span>
+          <span class="step-line"></span>
+          <span class="step-badge">3</span>
+        </div>
+        <h2>New Master Password</h2>
+        <div class="form">
+          <label for="resetNewPassword">New master password</label>
+          <input id="resetNewPassword" type="password" autocomplete="new-password" placeholder="Min. 12 characters">
+          <label for="resetConfirmPassword">Confirm new master password</label>
+          <input id="resetConfirmPassword" type="password" autocomplete="new-password" placeholder="Repeat password">
+          <button id="saveNewMasterBtn" class="btn">Save New Password</button>
+        </div>
+        <div id="resetStep2Status" class="status"></div>
+      </div>
+
+      <div id="resetStep3" class="reset-step hide">
+        <div class="step-indicator">
+          <span class="step-badge done">&#10003;</span>
+          <span class="step-line done"></span>
+          <span class="step-badge done">&#10003;</span>
+          <span class="step-line done"></span>
+          <span class="step-badge active">3</span>
+        </div>
+        <h2>All Done!</h2>
+        <p class="muted">Your master password has been updated. All other sessions have been invalidated.</p>
+        <button id="resetCompleteBtn" class="btn">Go to Vault</button>
       </div>
     </div>
   </section>

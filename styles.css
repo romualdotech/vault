@@ -1110,6 +1110,79 @@ th {
   font-size: 14px;
 }
 
+/* Step indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 20px;
+}
+
+.step-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--muted);
+  background: var(--panel);
+  flex-shrink: 0;
+  transition: all 200ms var(--ease);
+}
+
+.step-badge.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.step-badge.done {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+
+.step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--line);
+  transition: background 200ms var(--ease);
+}
+
+.step-line.done {
+  background: var(--success);
+}
+
+/* TOTP input row */
+.totp-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+#resetTotpCode {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 22px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  min-height: 48px;
+}
+
+/* Reset step transitions */
+.reset-step {
+  animation: slide-up-fade 0.3s var(--ease) both;
+}
+
+/* Locked state */
+.reset-locked {
+  pointer-events: none;
+  opacity: 0.6;
+}
+
 /* Loading primitives */
 @keyframes shimmer {
   0% {
