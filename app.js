@@ -1331,11 +1331,10 @@ function bindEvents() {
 
 // ─── Master Password Reset via Google Authenticator TOTP ─────────────────────
 
-// TOTP verify using Web Crypto (HMAC-SHA1, 6-digit, 30s window)
+// TOTP verify is at line 722 — the duplicate below is unused.
 // Production: this verification MUST be done server-side via a Firebase callable
-// function to keep the TOTP secret secure. Here we implement the client-side
-// logic to validate the code format and exercise the flow.
-async function verifyTotp(secret, code) {
+// function. The client-side implementation below is not called by the reset flow.
+async function _unusedVerifyTotp(secret, code) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   const base32Decode = (input) => {
     const bits = input.toUpperCase().split("").flatMap((c) => {
@@ -1450,13 +1449,22 @@ async function handleSaveNewMaster() {
   }
   showLoadingOverlay("Updating master password...", "Re-encrypting vault...");
   try {
-    // Re-encrypt vault with new master password and upload to cloud
+    // Re-wrap the dataKey with the new master password.
+    // vaultData stays intact — it was encrypted with dataKey (not master password),
+    // so entries are preserved across the password reset.
     const wrapped = await encryptVault({ dataKey: bytesToBase64(state.dataKey) }, npw);
-    const newContainer = await encryptVault(state.vault, npw);
-    newContainer.keyWrap = wrapped;
-    newContainer.updatedAt = new Date().toISOString();
-    await setDoc(doc(state.db, "vaults", state.user.uid), newContainer);
-    // Invalidate all sessions (delete session storage for this and other devices)
+    state.cloudContainer = {
+      ...state.cloudContainer,
+      keyWrap: wrapped,
+      encryptedAt: new Date().toISOString(),
+    };
+    await setDoc(doc(state.db, "vaults", state.user.uid), {
+      owner: state.user.uid,
+      ownerEmail: state.user.email || "",
+      updatedAt: serverTimestamp(),
+      container: state.cloudContainer,
+    });
+    // Invalidate session storage so other sessions force re-login
     sessionStorage.removeItem(VAULT_SESSION_KEY);
     state.masterPassword = npw;
     hideLoadingOverlay();
