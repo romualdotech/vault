@@ -485,6 +485,16 @@
     </main>
   </section>
 
+  <script>
+    window.__errors = [];
+    window.addEventListener('error', (event) => {
+      window.__errors.push(`${event.message} at ${event.filename}:${event.lineno}:${event.colno}`);
+    });
+    window.addEventListener('unhandledrejection', (event) => {
+      const reason = event.reason && event.reason.message ? event.reason.message : event.reason;
+      window.__errors.push(`unhandledrejection: ${reason}`);
+    });
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script type="module" src="app.js"></script>
 </body>

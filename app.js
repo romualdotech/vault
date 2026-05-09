@@ -759,20 +759,6 @@ async function renderTotpQr(secret) {
   }
 }
 
-function base32Encode(bytes) {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
-  let bits = "";
-  for (const byte of bytes) {
-    bits += byte.toString(2).padStart(8, "0");
-  }
-  let output = "";
-  for (let i = 0; i < bits.length; i += 5) {
-    const chunk = bits.slice(i, i + 5).padEnd(5, "0");
-    output += alphabet[parseInt(chunk, 2)];
-  }
-  return output;
-}
-
 function generateTotpSecret() {
   const bytes = crypto.getRandomValues(new Uint8Array(20));
   const secret = base32Encode(bytes);
