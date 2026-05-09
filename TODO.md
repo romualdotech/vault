@@ -7,5 +7,6 @@
 - [ ] UI/UX: Update index.html with global toast container/loading hooks
 - [ ] UI/UX: Update app.js to toggle loading indicators during async flows
 - [ ] Verification: sanity-check open flow in browser for layout breaks
+- [x] Security: Remove master password recovery code feature (Google Authenticator only)
 
 

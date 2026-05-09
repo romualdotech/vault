@@ -49,8 +49,6 @@ const state = {
   masterPassword: "",
   vault: null,
   dataKey: null,
-  recovery: null,
-  pendingRecovery: null,
   visiblePasswords: new Set(),
   signInResolver: null,
   signInVerificationId: "",
@@ -229,7 +227,6 @@ function saveVaultSession() {
     masterPassword: state.masterPassword,
     dataKeyBase64: state.dataKey ? bytesToBase64(state.dataKey) : null,
     vaultData: state.vault ? JSON.stringify(state.vault) : null,
-    recoveryData: state.recovery ? JSON.stringify(state.recovery) : null,
     userId: state.user?.uid || null,
   };
   sessionStorage.setItem(VAULT_SESSION_KEY, JSON.stringify(sessionData));
@@ -257,8 +254,7 @@ function restoreVaultSession() {
     state.masterPassword = sessionData.masterPassword;
     state.dataKey = sessionData.dataKeyBase64 ? base64ToBytes(sessionData.dataKeyBase64) : null;
     state.vault = sessionData.vaultData ? JSON.parse(sessionData.vaultData) : null;
-    state.recovery = sessionData.recoveryData ? JSON.parse(sessionData.recoveryData) : null;
-    
+
     return true;
   } catch (error) {
     console.error("Failed to restore vault session:", error);
@@ -447,25 +443,20 @@ function setStatus(id, text, kind = "") {
   el.className = `status ${kind}`.trim();
 
   // Also surface a global toast for major UX feedback
-  if (id === "signInStatus" || id === "gateStatus" || id === "syncStatus" || id === "entryStatus" || id === "securityStatus" || id === "recoveryGateStatus" || id === "recoveryStatus" || id === "recoverySetupPanel") {
+  if (id === "signInStatus" || id === "gateStatus" || id === "syncStatus" || id === "entryStatus" || id === "securityStatus") {
     if (text && text.trim()) showToast(text, kind === "" ? "" : kind);
   }
 }
 
 
 function setGateMode(mode) {
-  const recoveryMode = mode === "recovery";
-  $("unlockForm").classList.toggle("hide", recoveryMode);
-  $("forgotMasterPanel").classList.toggle("hide", !recoveryMode);
-  setStatus("gateStatus", "");
-  setStatus("recoveryGateStatus", "");
+  $("unlockForm").classList.remove("hide");
 }
 
 function updateGateControls() {
   const hasVault = Boolean(state.cloudContainer);
   $("createBtn").classList.toggle("hide", hasVault);
   $("confirmMasterGroup").classList.toggle("hide", hasVault);
-  $("forgotMasterBtn").classList.toggle("hide", !hasVault);
 }
 
 function bytesToBase64(bytes) {
@@ -566,13 +557,11 @@ async function loadCloudVault() {
   const data = snapshot.exists() ? snapshot.data() : null;
   state.cloudContainer = data?.container || null;
   state.cloudUpdateTime = data?.updatedAt?.toMillis?.() || 0;
-  state.recovery = state.cloudContainer?.recovery || data?.recovery || null;
   $("cloudStatus").textContent = state.cloudContainer
     ? "Cloud vault found. Enter your master password."
     : "No cloud vault yet. Create one with a new master password.";
   setGateMode("unlock");
   updateGateControls();
-  updateRecoveryStatus();
 }
 
 async function saveCloudVault() {
@@ -589,7 +578,6 @@ async function saveCloudVault() {
         app: "personal-account-vault-cloud",
         encryptedAt: new Date().toISOString(),
         keyWrap: await encryptVault({ dataKey: bytesToBase64(state.dataKey) }, state.masterPassword),
-        recovery: state.recovery || null,
         vaultData: await encryptWithDataKey(state.vault, state.dataKey),
       };
     } else {
@@ -672,16 +660,6 @@ function generatedPassword(length = 28) {
   return Array.from(bytes, (byte) => chars[byte % chars.length]).join("");
 }
 
-function generateRecoveryCode() {
-  const bytes = crypto.getRandomValues(new Uint8Array(32));
-  return bytesToBase64(bytes)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "")
-    .match(/.{1,6}/g)
-    .join("-");
-}
-
 function base32Encode(bytes) {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
   let bits = 0;
@@ -751,13 +729,6 @@ async function ensureDataKey() {
   if (!state.dataKey) {
     state.dataKey = crypto.getRandomValues(new Uint8Array(32));
   }
-}
-
-function updateRecoveryStatus() {
-  const text = state.recovery
-    ? `Recovery enabled on ${new Date(state.recovery.enabledAt).toLocaleString()}.`
-    : "Recovery is not set up yet.";
-  if ($("recoveryStatusText")) $("recoveryStatusText").textContent = text;
 }
 
 async function renderTotpQr(secret) {
@@ -1042,11 +1013,9 @@ async function unlockVault() {
       const wrapped = await decryptVault(state.cloudContainer.keyWrap, state.masterPassword);
       state.dataKey = base64ToBytes(wrapped.dataKey);
       decryptedVault = await decryptWithDataKey(state.cloudContainer.vaultData, state.dataKey);
-      state.recovery = state.cloudContainer.recovery || null;
     } else {
       state.dataKey = null;
       decryptedVault = await decryptVault(state.cloudContainer, state.masterPassword);
-      state.recovery = null;
     }
     
     // Validate decrypted data
@@ -1062,7 +1031,6 @@ async function unlockVault() {
     updateWelcomeGreeting();
     initializeClock();
     showSuccessOverlay();
-    updateRecoveryStatus();
     migrateFavicons();
     saveVaultSession();
     setupInactivityDetection();
@@ -1094,7 +1062,6 @@ async function createCloudVault() {
   state.masterPassword = password;
   state.vault = blankVault();
   state.dataKey = crypto.getRandomValues(new Uint8Array(32));
-  state.recovery = null;
   await saveCloudVault();
   clearForm();
   showOnly("appScreen");
@@ -1111,7 +1078,6 @@ function lockVault() {
   state.masterPassword = "";
   state.vault = null;
   state.dataKey = null;
-  state.pendingRecovery = null;
   state.visiblePasswords.clear();
   $("masterPassword").value = "";
   $("confirmPassword").value = "";
@@ -1154,106 +1120,6 @@ async function verifyEnrollCode() {
   }
 }
 
-async function generateRecoverySetup() {
-  try {
-    await ensureDataKey();
-    const recoveryCode = generateRecoveryCode();
-    const secret = base32Encode(crypto.getRandomValues(new Uint8Array(20)));
-    state.pendingRecovery = { recoveryCode, secret };
-    $("recoveryCodeOutput").value = recoveryCode;
-    $("recoverySetupPanel").classList.remove("hide");
-    await renderTotpQr(secret);
-    setStatus("recoveryStatus", "Scan the QR code, save the recovery code, then enter a 6-digit authenticator code.", "good");
-  } catch (error) {
-    setStatus("recoveryStatus", error.message, "bad");
-  }
-}
-
-async function verifyAndEnableRecovery() {
-  try {
-    if (!state.pendingRecovery) {
-      setStatus("recoveryStatus", "Create a recovery QR first.", "bad");
-      return;
-    }
-    const ok = await verifyTotp(state.pendingRecovery.secret, $("recoveryTotpCode").value);
-    if (!ok) {
-      setStatus("recoveryStatus", "Authenticator code is not valid yet.", "bad");
-      return;
-    }
-    await ensureDataKey();
-    state.recovery = {
-      enabledAt: new Date().toISOString(),
-      totpSecret: state.pendingRecovery.secret,
-      keyWrap: await encryptVault(
-        { dataKey: bytesToBase64(state.dataKey) },
-        state.pendingRecovery.recoveryCode
-      ),
-    };
-    state.pendingRecovery = null;
-    $("recoverySetupPanel").classList.add("hide");
-    $("recoveryTotpCode").value = "";
-    await saveCloudVault();
-    updateRecoveryStatus();
-    setStatus("recoveryStatus", "Recovery enabled. Keep your recovery code offline.", "good");
-  } catch (error) {
-    setStatus("recoveryStatus", error.message, "bad");
-  }
-}
-
-async function disableRecovery() {
-  if (!state.recovery) {
-    setStatus("recoveryStatus", "Recovery is already disabled.", "bad");
-    return;
-  }
-  if (!confirm("Disable master password recovery?")) return;
-  state.recovery = null;
-  state.pendingRecovery = null;
-  await saveCloudVault();
-  updateRecoveryStatus();
-  setStatus("recoveryStatus", "Recovery disabled.", "good");
-}
-
-async function recoverMasterPassword() {
-  try {
-    if (!state.cloudContainer?.recovery) {
-      setStatus("recoveryGateStatus", "Recovery is not set up for this vault.", "bad");
-      return;
-    }
-    const nextPassword = $("resetNewMaster").value;
-    if (nextPassword.length < 12) {
-      setStatus("recoveryGateStatus", "Use at least 12 characters for the new master password.", "bad");
-      return;
-    }
-    if (nextPassword !== $("resetNewMasterConfirm").value) {
-      setStatus("recoveryGateStatus", "New master passwords do not match.", "bad");
-      return;
-    }
-    const recovery = state.cloudContainer.recovery;
-    const codeOk = await verifyTotp(recovery.totpSecret, $("resetTotpCode").value);
-    if (!codeOk) {
-      setStatus("recoveryGateStatus", "Authenticator code is not valid.", "bad");
-      return;
-    }
-    const wrapped = await decryptVault(recovery.keyWrap, $("resetRecoveryCode").value.trim());
-    state.dataKey = base64ToBytes(wrapped.dataKey);
-    state.vault = await decryptWithDataKey(state.cloudContainer.vaultData, state.dataKey);
-    state.masterPassword = nextPassword;
-    state.recovery = recovery;
-    await saveCloudVault();
-    clearForm();
-    showOnly("appScreen");
-    updateRecoveryStatus();
-    render();
-    setStatus("syncStatus", "Master password reset using recovery.", "good");
-  } catch {
-    setStatus("recoveryGateStatus", "Recovery failed. Check recovery code and authenticator code.", "bad");
-  }
-}
-
-function toggleForgotMasterPanel() {
-  setGateMode("recovery");
-}
-
 function switchView(id) {
   ["accountsView", "backupView", "securityView", "appearanceView"].forEach((view) => {
     $(view).classList.toggle("hide", view !== id);
@@ -1269,9 +1135,6 @@ function bindEvents() {
   $("verifyMfaCodeBtn").addEventListener("click", verifyMfaSignInCode);
   $("unlockBtn").addEventListener("click", unlockVault);
   $("createBtn").addEventListener("click", createCloudVault);
-  $("forgotMasterBtn").addEventListener("click", toggleForgotMasterPanel);
-  $("recoverMasterBtn").addEventListener("click", recoverMasterPassword);
-  $("backToUnlockBtn").addEventListener("click", () => setGateMode("unlock"));
   $("lockBtn").addEventListener("click", lockVault);
   $("signOutBtn").addEventListener("click", () => signOut(state.auth));
   $("gateSignOutBtn").addEventListener("click", () => signOut(state.auth));
@@ -1403,9 +1266,6 @@ function bindEvents() {
   });
   $("sendEnrollCodeBtn").addEventListener("click", sendEnrollCode);
   $("verifyEnrollCodeBtn").addEventListener("click", verifyEnrollCode);
-  $("generateRecoveryBtn").addEventListener("click", generateRecoverySetup);
-  $("verifyRecoveryBtn").addEventListener("click", verifyAndEnableRecovery);
-  $("disableRecoveryBtn").addEventListener("click", disableRecovery);
   $("saveAppearanceBtn").addEventListener("click", () => {
     state.branding = collectAppearanceForm();
     saveBranding();
@@ -1477,8 +1337,6 @@ function initFirebase() {
     state.vault = null;
     state.masterPassword = "";
     state.dataKey = null;
-    state.recovery = null;
-    state.pendingRecovery = null;
     state.visiblePasswords.clear();
     if (!user) {
       showOnly("signInScreen");
@@ -1504,7 +1362,6 @@ function initFirebase() {
         showOnly("appScreen");
         updateWelcomeGreeting();
         initializeClock();
-        updateRecoveryStatus();
         migrateFavicons();
         setupInactivityDetection();
         await saveDeviceLogin();
