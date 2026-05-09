@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Noel-Romualdo</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <section id="setupScreen" class="center-screen hide">
+    <div class="card narrow">
+      <h1>Firebase Setup Needed</h1>
+      <p>Open <strong>firebase-config.js</strong> and paste your Firebase web app config before deploying online.</p>
+      <div id="setupStatus" class="status bad"></div>
+    </div>
+  </section>
+
+  <section id="signInScreen" class="landing-screen hide">
+    <div class="landing-shade"></div>
+    <div class="landing-content">
+      <div class="landing-copy">
+        <div class="brand-mark large">PV</div>
+        <p class="eyebrow">Private encrypted access</p>
+        <h1><span id="typingText" class="typing-text" data-typing="NOEL ECHON ROMUALDO PERSONAL VAULT SYSTEM"></span></h1>
+        <h4><i id="landingTagline">Your Secure Personal Data Management Solution</i></h4>
+        <p id="landingSubtitle" class="landing-subtitle">Google login, encrypted cloud storage, and master-password vault protection for your important personal accounts.</p>
+        <div class="security-pills">
+          <span>Google Sign-In</span>
+          <span>Encrypted Cloud Vault</span>
+          <span>2FA Ready</span>
+        </div>
+      </div>
+
+      <div class="login-panel">
+        <h2>Access Vault</h2>
+        <p>Sign in first, then unlock your encrypted vault with your master password.</p>
+        <button id="googleSignInBtn" class="btn wide">Sign in with Google</button>
+        <div id="signInStatus" class="status"></div>
+        <div id="mfaChallenge" class="mfa-box hide">
+          <h2>2FA Verification</h2>
+          <p id="mfaHint" class="muted"></p>
+          <div class="form">
+            <button id="sendMfaCodeBtn" class="btn secondary" type="button">Send SMS Code</button>
+            <input id="mfaCode" inputmode="numeric" placeholder="Enter SMS code">
+            <button id="verifyMfaCodeBtn" class="btn" type="button">Verify Code</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="vaultGate" class="center-screen hide">
+    <div class="card narrow">
+      <div class="topline">
+        <div>
+          <h1>Unlock Vault</h1>
+          <p id="cloudStatus">Checking cloud vault...</p>
+        </div>
+        <button id="gateSignOutBtn" class="btn secondary">Sign Out</button>
+      </div>
+      <div class="user-strip">
+        <img id="gatePhoto" alt="" class="avatar">
+        <div>
+          <strong id="gateName"></strong>
+          <span id="gateEmail"></span>
+        </div>
+      </div>
+      <div id="unlockForm" class="form">
+        <label for="masterPassword">Master password</label>
+        <input id="masterPassword" type="password" autocomplete="current-password" placeholder="Your vault master password">
+        <div id="confirmMasterGroup">
+          <label for="confirmPassword">Confirm master password</label>
+          <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Only needed when creating a vault">
+        </div>
+        <div class="actions">
+          <button id="unlockBtn" class="btn">Unlock</button>
+          <button id="createBtn" class="btn secondary">Create Cloud Vault</button>
+        </div>
+        <button id="forgotMasterBtn" class="link-button" type="button">Forgot master password?</button>
+        <div id="gateStatus" class="status"></div>
+      </div>
+      <div id="forgotMasterPanel" class="form hide">
+        <p class="muted">Reset your master password using your saved recovery code and authenticator app.</p>
+        <label for="resetRecoveryCode">Recovery code</label>
+        <input id="resetRecoveryCode" autocomplete="off" placeholder="Paste your recovery code">
+        <label for="resetTotpCode">Authenticator code</label>
+        <input id="resetTotpCode" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit code">
+        <label for="resetNewMaster">New master password</label>
+        <input id="resetNewMaster" type="password" autocomplete="new-password">
+        <label for="resetNewMasterConfirm">Confirm new master password</label>
+        <input id="resetNewMasterConfirm" type="password" autocomplete="new-password">
+        <div class="actions">
+          <button id="recoverMasterBtn" class="btn" type="button">Reset Master Password</button>
+          <button id="backToUnlockBtn" class="btn secondary" type="button">Back To Unlock</button>
+        </div>
+        <div id="recoveryGateStatus" class="status"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="appScreen" class="shell hide">
+    <div id="successOverlay" class="success-overlay hide">
+      <div class="success-card animate-in">
+        <div class="checkmark-container">
+          <svg class="animated-checkmark" viewBox="0 0 52 52" width="60" height="60">
+            <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none" stroke="currentColor" stroke-width="2"/>
+            <g class="checkmark-content">
+              <!-- Rotating arrow -->
+              <g class="rotating-arrow">
+                <path d="M26 8 L26 16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M26 8 L20 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M26 8 L32 14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </g>
+              <!-- Checkmark path that appears after -->
+              <path class="checkmark-path" d="M14 26 L23 35 L38 17" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+          </svg>
+        </div>
+        <h2 id="greetingText">Hello, Master Noel!</h2>
+        <p id="greetingSubtext">Good Morning</p>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">PV</div>
+        <h1>Personal Vault</h1>
+        <p>Encrypted cloud account system</p>
+      </div>
+      <nav class="nav" aria-label="Main">
+        <button class="active" data-view="accountsView">Accounts</button>
+        <button data-view="backupView">Backup</button>
+        <button data-view="securityView">Security</button>
+        <button data-view="appearanceView">Appearance</button>
+      </nav>
+      <div class="sidebar-foot">
+        <div id="vaultMeta">Locked</div>
+        <button id="lockBtn" class="btn secondary">Lock Vault</button>
+        <button id="signOutBtn" class="btn secondary">Sign Out</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="welcomeHeader" class="welcome-header animate-fade-in">
+        <div class="welcome-content">
+          <div>
+            <h2 id="welcomeGreeting">Good Morning, Master Noel!</h2>
+            <p id="welcomeDate" class="welcome-date">Loading...</p>
+          </div>
+          <div id="liveClock" class="live-clock">
+            <div id="clockTime" class="clock-time">--:--</div>
+            <div id="clockDate" class="clock-date">--/--/----</div>
+          </div>
+        </div>
+      </div>
+
+      <section id="accountsView">
+        <div class="topbar">
+          <div class="title">
+            <h2>Accounts</h2>
+            <p id="syncStatus">Ready</p>
+          </div>
+          <div class="actions">
+            <button id="newEntryBtn" class="btn secondary">New Entry</button>
+            <button id="saveEntryBtn" class="btn">Save Entry</button>
+          </div>
+        </div>
+
+        <div class="grid">
+          <section class="panel">
+            <div class="panel-head">
+              <h3 id="formTitle">New Entry</h3>
+              <span id="entryStatus" class="status"></span>
+            </div>
+            <div class="panel-body">
+              <form id="entryForm" class="form">
+                <input id="entryId" type="hidden">
+                <label for="label">Account label</label>
+                <input id="label" required placeholder="Example: Main Gmail">
+                <div class="two">
+                  <div>
+                    <label for="category">Category</label>
+                    <select id="category">
+                      <option>Social</option>
+                      <option>Email</option>
+                      <option>Banking</option>
+                      <option>Government</option>
+                      <option>Work</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="website">Website or app</label>
+                    <input id="website" placeholder="https://example.com">
+                  </div>
+                </div>
+                <div class="two">
+                  <div>
+                    <label for="username">Username</label>
+                    <input id="username" autocomplete="off">
+                  </div>
+                  <div>
+                    <label for="email">Email</label>
+                    <input id="email" type="email" autocomplete="off">
+                  </div>
+                </div>
+                <label for="password">Password</label>
+                <div class="input-action">
+                  <input id="password" type="password" autocomplete="new-password">
+                  <button id="toggleFormPassword" class="btn secondary small" type="button">Show</button>
+                  <button id="generateBtn" class="btn secondary small" type="button">Generate</button>
+                </div>
+                <div class="two">
+                  <div>
+                    <label for="recoveryEmail">Recovery email</label>
+                    <input id="recoveryEmail" type="email" autocomplete="off">
+                  </div>
+                  <div>
+                    <label for="phone">Recovery phone</label>
+                    <input id="phone" autocomplete="off">
+                  </div>
+                </div>
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="Backup codes location, ID number hints, or reminders"></textarea>
+              </form>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="toolbar">
+              <input id="search" placeholder="Search account, email, username, category">
+              <select id="categoryFilter">
+                <option value="">All categories</option>
+                <option>Social</option>
+                <option>Email</option>
+                <option>Banking</option>
+                <option>Government</option>
+                <option>Work</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="records">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th>Category</th>
+                    <th>Login</th>
+                    <th>Password</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="entriesTable"></tbody>
+              </table>
+              <div id="emptyState" class="empty">No saved accounts yet.</div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="backupView" class="hide">
+        <div class="topbar">
+          <div class="title">
+            <h2>Backup</h2>
+            <p>Export or import encrypted vault backup files.</p>
+          </div>
+        </div>
+        <div class="backup-grid">
+          <div class="backup-card">
+            <h3>Export encrypted backup</h3>
+            <p>The file is encrypted by your master password before download.</p>
+            <button id="exportBtn" class="btn">Export Backup</button>
+          </div>
+          <div class="backup-card">
+            <h3>Import encrypted backup</h3>
+            <p>Import replaces your current cloud vault after successful decryption.</p>
+            <input id="importFile" type="file" accept=".json,.vault">
+            <button id="importBtn" class="btn secondary">Import Backup</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="securityView" class="hide">
+        <div class="topbar">
+          <div class="title">
+            <h2>Security</h2>
+            <p>Google account security plus client-side vault encryption.</p>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="panel">
+            <div class="panel-head"><h3>Change master password</h3></div>
+            <div class="panel-body form">
+              <label for="newMaster">New master password</label>
+              <input id="newMaster" type="password" autocomplete="new-password">
+              <label for="newMasterConfirm">Confirm new master password</label>
+              <input id="newMasterConfirm" type="password" autocomplete="new-password">
+              <button id="changeMasterBtn" class="btn">Change Password</button>
+              <div id="securityStatus" class="status"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Firebase SMS 2FA</h3></div>
+            <div class="panel-body form">
+              <p id="mfaStatus" class="muted">Checking enrolled factors...</p>
+              <label for="mfaPhone">Phone number</label>
+              <input id="mfaPhone" placeholder="+639171234567">
+              <button id="sendEnrollCodeBtn" class="btn secondary" type="button">Send Enrollment Code</button>
+              <label for="mfaEnrollCode">SMS code</label>
+              <input id="mfaEnrollCode" inputmode="numeric">
+              <button id="verifyEnrollCodeBtn" class="btn" type="button">Enable SMS 2FA</button>
+              <div id="recaptcha-container"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Master Password Recovery</h3></div>
+            <div class="panel-body form">
+              <p id="recoveryStatusText" class="muted">Recovery is not set up yet.</p>
+              <button id="generateRecoveryBtn" class="btn secondary" type="button">Create Recovery QR</button>
+              <div id="recoverySetupPanel" class="recovery-box hide">
+                <label>Recovery code</label>
+                <textarea id="recoveryCodeOutput" readonly></textarea>
+                <label>Authenticator QR code</label>
+                <canvas id="totpQr" class="qr-canvas"></canvas>
+                <label>Manual setup key</label>
+                <input id="totpManualKey" readonly>
+                <label for="recoveryTotpCode">Enter authenticator code</label>
+                <input id="recoveryTotpCode" inputmode="numeric" autocomplete="one-time-code">
+                <button id="verifyRecoveryBtn" class="btn" type="button">Verify And Enable Recovery</button>
+              </div>
+              <button id="disableRecoveryBtn" class="btn danger" type="button">Disable Recovery</button>
+              <div id="recoveryStatus" class="status"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Device Logins</h3></div>
+            <div class="panel-body">
+              <p class="muted">Track devices that have logged into your vault. The current device is highlighted.</p>
+              <div class="records">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Device</th>
+                      <th>User Agent</th>
+                      <th>Login Time</th>
+                      <th>Last Active</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="deviceLoginsTable"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="panel danger-zone">
+            <div class="panel-head"><h3>Cloud vault reset</h3></div>
+            <div class="panel-body form">
+              <p class="muted">This deletes your encrypted vault document from Firestore.</p>
+              <button id="deleteCloudBtn" class="btn danger">Delete Cloud Vault</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="appearanceView" class="hide">
+        <div class="topbar">
+          <div class="title">
+            <h2>Appearance</h2>
+            <p>Customize the landing page title, logo text, and animation position.</p>
+          </div>
+        </div>
+        <div class="grid">
+          <div class="panel">
+            <div class="panel-head"><h3>Landing Branding</h3></div>
+            <div class="panel-body form">
+              <label for="brandLogoText">Logo text</label>
+              <input id="brandLogoText" maxlength="6" placeholder="PV">
+              <label for="brandLogoFile">Logo image</label>
+              <input id="brandLogoFile" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml">
+              <div class="actions">
+                <button id="removeLogoImageBtn" class="btn secondary" type="button">Remove Logo Image</button>
+              </div>
+              <label for="brandTitleText">Animated title</label>
+              <textarea id="brandTitleText" placeholder="NOEL ECHON ROMUALDO PERSONAL VAULT SYSTEM"></textarea>
+              <label for="brandTaglineText">Tagline</label>
+              <input id="brandTaglineText" placeholder="My Secure Personal Data Management Solution">
+              <label for="brandSubtitleText">Subtitle</label>
+              <textarea id="brandSubtitleText" placeholder="Google login, encrypted cloud storage..."></textarea>
+              <label for="brandTitlePosition">Animated title position</label>
+              <select id="brandTitlePosition">
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+              </select>
+              <div class="actions">
+                <button id="saveAppearanceBtn" class="btn" type="button">Save Appearance</button>
+                <button id="resetAppearanceBtn" class="btn secondary" type="button">Reset</button>
+              </div>
+              <div id="appearanceStatus" class="status"></div>
+            </div>
+          </div>
+          <div class="panel appearance-preview">
+            <div class="panel-head"><h3>Preview Notes</h3></div>
+            <div class="panel-body">
+              <p class="muted">Changes apply to the landing page and sidebar logo on this browser. Upload the updated files to GitHub for the latest feature, then use this panel online.</p>
+              <div class="mini-hero">
+                <div class="brand-mark">PV</div>
+                <strong id="previewTitle">NOEL ECHON ROMUALDO PERSONAL VAULT SYSTEM</strong>
+                <span id="previewSubtitle">My Secure Personal Data Management Solution</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

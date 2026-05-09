@@ -1,0 +1,7 @@
+vault.enc
+vault.enc.tmp
+*.enc
+*.vault
+*.backup
+*.bak
+.env
