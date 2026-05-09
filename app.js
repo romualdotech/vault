@@ -19,6 +19,7 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  onSnapshot,
   serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
@@ -56,6 +57,8 @@ const state = {
   enrollVerificationId: "",
   recaptcha: null,
   typingTimer: null,
+  cloudListenerUnsubscribe: null,
+  cloudUpdateTime: 0,
   branding: { ...DEFAULT_BRANDING },
   clockInterval: null,
   inactivityTimer: null,
@@ -201,15 +204,13 @@ function updateWelcomeGreeting() {
   if (dateEl) dateEl.textContent = date;
 }
 
-function showSuccessOverlay() {
+function showSuccessOverlay(title = `Hello, Master Noel!`, subtitle = getGreetingMessage()) {
   const overlay = $("successOverlay");
-  const greeting = getGreetingMessage();
-  
   const greetingEl = $("greetingText");
   const subtextEl = $("greetingSubtext");
   
-  if (greetingEl) greetingEl.textContent = `Hello, Master Noel!`;
-  if (subtextEl) subtextEl.textContent = greeting;
+  if (greetingEl) greetingEl.textContent = title;
+  if (subtextEl) subtextEl.textContent = subtitle;
   
   if (overlay) {
     overlay.classList.remove("hide");
@@ -520,6 +521,7 @@ async function loadCloudVault() {
   const snapshot = await getDoc(vaultRef());
   const data = snapshot.exists() ? snapshot.data() : null;
   state.cloudContainer = data?.container || null;
+  state.cloudUpdateTime = data?.updatedAt?.toMillis?.() || 0;
   state.recovery = state.cloudContainer?.recovery || data?.recovery || null;
   $("cloudStatus").textContent = state.cloudContainer
     ? "Cloud vault found. Enter your master password."
@@ -552,6 +554,50 @@ async function saveCloudVault() {
   saveVaultSession();
   render();
   setStatus("syncStatus", "Saved to encrypted cloud vault.", "good");
+}
+
+function watchCloudVault() {
+  if (typeof state.cloudListenerUnsubscribe === "function") {
+    state.cloudListenerUnsubscribe();
+  }
+  if (!state.user || !state.db) return;
+
+  state.cloudListenerUnsubscribe = onSnapshot(vaultRef(), async (snapshot) => {
+    if (!snapshot.exists()) return;
+    const data = snapshot.data();
+    const container = data?.container || null;
+    const updatedAt = data?.updatedAt?.toMillis?.();
+    if (!container) return;
+    if (updatedAt) {
+      if (updatedAt === state.cloudUpdateTime) return;
+      state.cloudUpdateTime = updatedAt;
+    } else if (JSON.stringify(container) === JSON.stringify(state.cloudContainer)) {
+      return;
+    }
+    state.cloudContainer = container;
+
+    if (state.masterPassword && state.cloudContainer) {
+      try {
+        if (state.cloudContainer.version === 3) {
+          const wrapped = await decryptVault(state.cloudContainer.keyWrap, state.masterPassword);
+          state.dataKey = base64ToBytes(wrapped.dataKey);
+          state.vault = await decryptWithDataKey(state.cloudContainer.vaultData, state.dataKey);
+          state.recovery = state.cloudContainer.recovery || state.recovery;
+        } else {
+          state.dataKey = null;
+          state.vault = await decryptVault(state.cloudContainer, state.masterPassword);
+          state.recovery = null;
+        }
+        render();
+        setStatus("syncStatus", "Vault updated from another device.", "good");
+      } catch (error) {
+        console.warn("Realtime vault update failed:", error);
+      }
+    }
+  }, (error) => {
+    console.warn("Realtime vault listener error:", error);
+    setStatus("syncStatus", "Realtime sync error.", "bad");
+  });
 }
 
 function uid() {
@@ -1098,11 +1144,18 @@ function bindEvents() {
       return;
     }
     const index = state.vault.entries.findIndex((item) => item.id === entry.id);
+    const isNewEntry = index < 0;
     if (index >= 0) state.vault.entries[index] = entry;
     else state.vault.entries.push(entry);
     await saveCloudVault();
     fillForm(entry);
     setStatus("entryStatus", "Saved.", "good");
+    showSuccessOverlay(
+      isNewEntry ? "Successfully added a credential" : "Credential updated",
+      isNewEntry
+        ? "Your new entry is synced across devices."
+        : "Your change is now live on other devices."
+    );
   });
   $("generateBtn").addEventListener("click", () => {
     $("password").value = generatedPassword();
@@ -1254,6 +1307,10 @@ function initFirebase() {
   state.db = getFirestore(state.app);
   state.provider = new GoogleAuthProvider();
   onAuthStateChanged(state.auth, async (user) => {
+    if (typeof state.cloudListenerUnsubscribe === "function") {
+      state.cloudListenerUnsubscribe();
+      state.cloudListenerUnsubscribe = null;
+    }
     state.user = user;
     state.vault = null;
     state.masterPassword = "";
@@ -1277,6 +1334,7 @@ function initFirebase() {
       showOnly("vaultGate");
       await loadCloudVault();
       await loadDeviceLogins();
+      watchCloudVault();
       
       // Try to restore vault session if it exists
       if (restoreVaultSession()) {
