@@ -719,23 +719,18 @@ function escapeHtml(value) {
   }[char]));
 }
 
-function getFaviconUrl(url) {
-  try {
-    const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
-    const domain = urlObj.hostname;
-    // Try multiple common favicon locations
-    const faviconPaths = [
-      `https://${domain}/favicon.ico`,
-      `https://${domain}/favicon.png`,
-      `https://www.${domain}/favicon.ico`,
-      `https://www.${domain}/favicon.png`,
-      `https://${domain}/apple-touch-icon.png`,
-      `https://www.${domain}/apple-touch-icon.png`,
-    ];
-    // Return the first one - browser will handle loading and fallback
-    return faviconPaths[0];
-  } catch {
-    return "";
+function migrateFavicons() {
+  if (!state.vault?.entries) return;
+  let hasChanges = false;
+  for (const entry of state.vault.entries) {
+    if (entry.website && (!entry.favicon || !entry.favicon.includes('google.com/s2/favicons'))) {
+      entry.favicon = getFaviconUrl(entry.website);
+      hasChanges = true;
+    }
+  }
+  if (hasChanges) {
+    // Mark vault as updated for next save
+    state.vault.updatedAt = new Date().toISOString();
   }
 }
 
@@ -959,6 +954,7 @@ async function unlockVault() {
     initializeClock();
     showSuccessOverlay();
     updateRecoveryStatus();
+    migrateFavicons();
     saveVaultSession();
     setupInactivityDetection();
     await saveDeviceLogin();
@@ -1381,6 +1377,7 @@ function initFirebase() {
         updateWelcomeGreeting();
         initializeClock();
         updateRecoveryStatus();
+        migrateFavicons();
         setupInactivityDetection();
         await saveDeviceLogin();
         renderDeviceLogins();
