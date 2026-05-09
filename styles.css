@@ -4,8 +4,8 @@
   --bg: #f5f7f6;
   --panel: #ffffff;
   --ink: #0f172a;
-  --muted: #5b6b73;
-  --line: #dbe3df;
+  --muted: #475962;
+  --line: #cfdce0;
 
   --accent: #0f766e;
   --accent-strong: #0b5f59;
@@ -37,8 +37,8 @@
     --bg: #0b1220;
     --panel: #0f1a2e;
     --ink: #e6edf6;
-    --muted: #9bb0c0;
-    --line: rgba(148, 163, 184, 0.22);
+    --muted: #c7d7e5;
+    --line: rgba(148, 163, 184, 0.30);
 
     --accent: #2bd4c1;
     --accent-strong: #1db7a6;
