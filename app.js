@@ -532,28 +532,42 @@ async function loadCloudVault() {
 }
 
 async function saveCloudVault() {
-  state.vault.updatedAt = new Date().toISOString();
-  if (state.dataKey) {
-    state.cloudContainer = {
-      version: 3,
-      app: "personal-account-vault-cloud",
-      encryptedAt: new Date().toISOString(),
-      keyWrap: await encryptVault({ dataKey: bytesToBase64(state.dataKey) }, state.masterPassword),
-      recovery: state.recovery || null,
-      vaultData: await encryptWithDataKey(state.vault, state.dataKey),
-    };
-  } else {
-    state.cloudContainer = await encryptVault(state.vault, state.masterPassword);
+  try {
+    // Validate vault before saving
+    if (!state.vault || !Array.isArray(state.vault.entries)) {
+      throw new Error("Vault data is corrupted - entries missing");
+    }
+    
+    state.vault.updatedAt = new Date().toISOString();
+    if (state.dataKey) {
+      state.cloudContainer = {
+        version: 3,
+        app: "personal-account-vault-cloud",
+        encryptedAt: new Date().toISOString(),
+        keyWrap: await encryptVault({ dataKey: bytesToBase64(state.dataKey) }, state.masterPassword),
+        recovery: state.recovery || null,
+        vaultData: await encryptWithDataKey(state.vault, state.dataKey),
+      };
+    } else {
+      state.cloudContainer = await encryptVault(state.vault, state.masterPassword);
+    }
+    
+    // Verify container before uploading
+    console.log("Saving vault with", state.vault.entries.length, "entries");
+    
+    await setDoc(vaultRef(), {
+      owner: state.user.uid,
+      ownerEmail: state.user.email || "",
+      updatedAt: serverTimestamp(),
+      container: state.cloudContainer,
+    });
+    saveVaultSession();
+    render();
+    setStatus("syncStatus", "Saved to encrypted cloud vault.", "good");
+  } catch (error) {
+    console.error("saveCloudVault error:", error);
+    throw error;
   }
-  await setDoc(vaultRef(), {
-    owner: state.user.uid,
-    ownerEmail: state.user.email || "",
-    updatedAt: serverTimestamp(),
-    container: state.cloudContainer,
-  });
-  saveVaultSession();
-  render();
-  setStatus("syncStatus", "Saved to encrypted cloud vault.", "good");
 }
 
 function watchCloudVault() {
@@ -567,36 +581,40 @@ function watchCloudVault() {
     const data = snapshot.data();
     const container = data?.container || null;
     const updatedAt = data?.updatedAt?.toMillis?.();
+    
     if (!container) return;
-    if (updatedAt) {
-      if (updatedAt === state.cloudUpdateTime) return;
-      state.cloudUpdateTime = updatedAt;
-    } else if (JSON.stringify(container) === JSON.stringify(state.cloudContainer)) {
+    
+    // Skip if this is the same container we just saved
+    if (state.cloudUpdateTime && updatedAt && updatedAt === state.cloudUpdateTime) {
       return;
     }
-    state.cloudContainer = container;
-
-    if (state.masterPassword && state.cloudContainer) {
-      try {
-        if (state.cloudContainer.version === 3) {
-          const wrapped = await decryptVault(state.cloudContainer.keyWrap, state.masterPassword);
-          state.dataKey = base64ToBytes(wrapped.dataKey);
-          state.vault = await decryptWithDataKey(state.cloudContainer.vaultData, state.dataKey);
-          state.recovery = state.cloudContainer.recovery || state.recovery;
-        } else {
-          state.dataKey = null;
-          state.vault = await decryptVault(state.cloudContainer, state.masterPassword);
-          state.recovery = null;
-        }
+    
+    // Only decrypt if we have masterPassword and are viewing the app
+    if (!state.masterPassword) return;
+    
+    try {
+      let newVault = null;
+      if (container.version === 3) {
+        const wrapped = await decryptVault(container.keyWrap, state.masterPassword);
+        const dataKey = base64ToBytes(wrapped.dataKey);
+        newVault = await decryptWithDataKey(container.vaultData, dataKey);
+      } else {
+        newVault = await decryptVault(container, state.masterPassword);
+      }
+      
+      // Only update if entries actually changed
+      if (JSON.stringify(state.vault?.entries || []) !== JSON.stringify(newVault?.entries || [])) {
+        state.vault = newVault;
+        state.cloudUpdateTime = updatedAt;
         render();
         setStatus("syncStatus", "Vault updated from another device.", "good");
-      } catch (error) {
-        console.warn("Realtime vault update failed:", error);
       }
+    } catch (error) {
+      console.error("Realtime vault update failed:", error);
+      // Don't show error to user - just log it
     }
   }, (error) => {
     console.warn("Realtime vault listener error:", error);
-    setStatus("syncStatus", "Realtime sync error.", "bad");
   });
 }
 
@@ -783,6 +801,9 @@ function clearForm() {
 }
 
 function filteredEntries() {
+  if (!state.vault || !Array.isArray(state.vault.entries)) {
+    return [];
+  }
   const query = $("search").value.trim().toLowerCase();
   const category = $("categoryFilter").value;
   return state.vault.entries.filter((entry) => {
@@ -801,7 +822,10 @@ function filteredEntries() {
 }
 
 function render() {
-  if (!state.vault) return;
+  if (!state.vault || !Array.isArray(state.vault.entries)) {
+    console.warn("Vault not loaded or entries missing");
+    return;
+  }
   const entries = filteredEntries().sort((a, b) => a.label.localeCompare(b.label));
   $("emptyState").classList.toggle("hide", entries.length > 0);
   $("entriesTable").innerHTML = entries.map((entry) => {
@@ -938,16 +962,27 @@ async function unlockVault() {
   }
   try {
     state.masterPassword = $("masterPassword").value;
+    let decryptedVault = null;
+    
     if (state.cloudContainer.version === 3) {
       const wrapped = await decryptVault(state.cloudContainer.keyWrap, state.masterPassword);
       state.dataKey = base64ToBytes(wrapped.dataKey);
-      state.vault = await decryptWithDataKey(state.cloudContainer.vaultData, state.dataKey);
+      decryptedVault = await decryptWithDataKey(state.cloudContainer.vaultData, state.dataKey);
       state.recovery = state.cloudContainer.recovery || null;
     } else {
       state.dataKey = null;
-      state.vault = await decryptVault(state.cloudContainer, state.masterPassword);
+      decryptedVault = await decryptVault(state.cloudContainer, state.masterPassword);
       state.recovery = null;
     }
+    
+    // Validate decrypted data
+    if (!decryptedVault || !Array.isArray(decryptedVault.entries)) {
+      throw new Error("Decrypted vault is invalid or corrupted");
+    }
+    
+    state.vault = decryptedVault;
+    console.log("Vault unlocked with", state.vault.entries.length, "entries");
+    
     clearForm();
     showOnly("appScreen");
     updateWelcomeGreeting();
@@ -960,8 +995,9 @@ async function unlockVault() {
     await saveDeviceLogin();
     renderDeviceLogins();
     render();
-  } catch {
-    setStatus("gateStatus", "Wrong master password or damaged cloud vault.", "bad");
+  } catch (error) {
+    console.error("Unlock vault error:", error);
+    setStatus("gateStatus", `Wrong master password or damaged cloud vault: ${error.message}`, "bad");
   }
 }
 
@@ -1171,24 +1207,38 @@ function bindEvents() {
     $("toggleFormBtn").title = newIsCollapsed ? "Expand form" : "Collapse form";
   });
   $("saveEntryBtn").addEventListener("click", async () => {
-    const entry = formEntry();
-    if (!entry.label) {
-      setStatus("entryStatus", "Label is required.", "bad");
-      return;
+    try {
+      if (!state.vault) {
+        setStatus("entryStatus", "Vault not loaded. Please unlock your vault first.", "bad");
+        return;
+      }
+      if (!state.masterPassword) {
+        setStatus("entryStatus", "Master password not set. Please unlock your vault.", "bad");
+        return;
+      }
+      const entry = formEntry();
+      if (!entry.label) {
+        setStatus("entryStatus", "Label is required.", "bad");
+        return;
+      }
+      const index = state.vault.entries.findIndex((item) => item.id === entry.id);
+      const isNewEntry = index < 0;
+      if (index >= 0) state.vault.entries[index] = entry;
+      else state.vault.entries.push(entry);
+      setStatus("entryStatus", "Saving...", "");
+      await saveCloudVault();
+      fillForm(entry);
+      setStatus("entryStatus", "Saved.", "good");
+      showSuccessOverlay(
+        isNewEntry ? "Successfully added a credential" : "Credential updated",
+        isNewEntry
+          ? "Your new entry is synced across devices."
+          : "Your change is now live on other devices."
+      );
+    } catch (error) {
+      console.error("Save entry error:", error);
+      setStatus("entryStatus", `Error saving: ${error.message}`, "bad");
     }
-    const index = state.vault.entries.findIndex((item) => item.id === entry.id);
-    const isNewEntry = index < 0;
-    if (index >= 0) state.vault.entries[index] = entry;
-    else state.vault.entries.push(entry);
-    await saveCloudVault();
-    fillForm(entry);
-    setStatus("entryStatus", "Saved.", "good");
-    showSuccessOverlay(
-      isNewEntry ? "Successfully added a credential" : "Credential updated",
-      isNewEntry
-        ? "Your new entry is synced across devices."
-        : "Your change is now live on other devices."
-    );
   });
   $("generateBtn").addEventListener("click", () => {
     $("password").value = generatedPassword();
