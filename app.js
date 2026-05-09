@@ -737,6 +737,32 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function normalizeWebsiteForFavicon(website) {
+  const raw = String(website || "").trim();
+  if (!raw) return "";
+
+  // If user typed "example.com" convert to https://example.com
+  if (!/^https?:\/\//i.test(raw)) {
+    return `https://${raw.replace(/^\/+/, "")}`;
+  }
+
+  return raw;
+}
+
+function getFaviconUrl(website) {
+  const normalized = normalizeWebsiteForFavicon(website);
+  if (!normalized) return "";
+
+  // Use Google favicon service (no API key, predictable URLs)
+  // Example: https://www.google.com/s2/favicons?domain=example.com
+  try {
+    const url = new URL(normalized);
+    return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(url.hostname)}`;
+  } catch {
+    return "";
+  }
+}
+
 function migrateFavicons() {
   if (!state.vault?.entries) return;
   let hasChanges = false;
@@ -751,6 +777,7 @@ function migrateFavicons() {
     state.vault.updatedAt = new Date().toISOString();
   }
 }
+
 
 function findById(id) {
   return state.vault.entries.find((entry) => entry.id === id);
