@@ -459,7 +459,6 @@ function setGateMode(mode) {
 
 function updateGateControls() {
   const hasVault = Boolean(state.cloudContainer);
-  $("createBtn").classList.toggle("hide", hasVault);
   $("confirmMasterGroup").classList.toggle("hide", hasVault);
 }
 
@@ -1177,7 +1176,6 @@ function bindEvents() {
   $("sendMfaCodeBtn").addEventListener("click", sendMfaSignInCode);
   $("verifyMfaCodeBtn").addEventListener("click", verifyMfaSignInCode);
   $("unlockBtn").addEventListener("click", unlockVault);
-  $("createBtn").addEventListener("click", createCloudVault);
   $("lockBtn").addEventListener("click", lockVault);
   $("signOutBtn").addEventListener("click", () => signOut(state.auth));
   $("gateSignOutBtn").addEventListener("click", () => signOut(state.auth));
