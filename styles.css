@@ -941,9 +941,14 @@ th {
 
 /* Table polish (desktop-first). Mobile spacing is handled by existing breakpoints. */
 @media (min-width: 941px) {
+  #accountsView .records {
+    overflow: visible;
+  }
+
   #accountsView .records table {
     border-radius: 16px;
   }
+
 
   #accountsView .records thead th,
   #accountsView .records tbody td {
@@ -1167,6 +1172,7 @@ th {
 @media (min-width: 941px) {
   .shell {
     grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    column-gap: 22px;
   }
 
   .shell::before {
@@ -1179,15 +1185,52 @@ th {
     transform: none;
     opacity: 1;
     visibility: visible;
-    width: 100%;
-    max-width: none;
-    min-height: auto;
+
+    /* Critical: keep sidebar from collapsing/overlapping with the fixed-mobile styles */
+    width: 320px;
+    max-width: 320px;
+    min-height: 0;
+
     border-right: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.96);
     color: var(--ink);
     box-shadow: none;
-    padding: 32px 22px;
+
+    /* Consistent desktop spacing */
+    padding: 32px 18px;
+    display: flex;
+    flex-direction: column;
   }
+
+  /* Make sure nav + action buttons always appear (no accidental clipping) */
+  .sidebar .nav,
+  .sidebar .sidebar-actions {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .sidebar .nav {
+    gap: 10px;
+  }
+
+  .sidebar .nav button {
+    padding: 14px 14px;
+  }
+
+  .sidebar .sidebar-actions {
+    margin-top: auto;
+    gap: 14px;
+  }
+
+  .sidebar .sidebar-action-buttons {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .sidebar .sidebar-action-buttons button {
+    width: 100%;
+  }
+
 
   .sidebar h1,
   .sidebar p,
@@ -1202,7 +1245,8 @@ th {
   }
 
   .main {
-    padding: 32px 32px 32px 24px;
+    /* reduce left padding so labels/buttons align better */
+    padding: 32px 32px 32px 09px;
   }
 
   .topbar {

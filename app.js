@@ -224,6 +224,21 @@ function showSuccessOverlay(title = `Hello, Master Noel!`, subtitle = getGreetin
   }
 }
 
+function focusSearchOnOpen() {
+  const search = $("search");
+  if (!search) return;
+
+  // Defer to ensure the app screen is already visible
+  setTimeout(() => {
+    try {
+      search.focus({ preventScroll: true });
+    } catch {
+      search.focus();
+    }
+  }, 0);
+}
+
+
 // Session Management Functions
 function saveVaultSession() {
   const sessionData = {
@@ -1070,9 +1085,11 @@ async function unlockVault() {
     
     clearForm();
     showOnly("appScreen");
+    focusSearchOnOpen();
     updateWelcomeGreeting();
     initializeClock();
     showSuccessOverlay();
+
     migrateFavicons();
     saveVaultSession();
     setupInactivityDetection();
@@ -1595,7 +1612,9 @@ function initFirebase() {
       if (restoreVaultSession()) {
         clearForm();
         showOnly("appScreen");
+        focusSearchOnOpen();
         updateWelcomeGreeting();
+
         initializeClock();
         migrateFavicons();
         setupInactivityDetection();
