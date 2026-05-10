@@ -1558,13 +1558,26 @@ th {
   margin: 0 0 8px;
   font-size: 28px;
   line-height: 1.2;
+  color: #0f172a; /* light mode: black */
 }
 
 .welcome-date {
   margin: 0;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(15, 23, 42, 0.75); /* light mode: black */
   font-size: 14px;
 }
+
+@media (prefers-color-scheme: dark) {
+  /* Ensure welcome header text matches dark-mode background */
+  #welcomeGreeting {
+    color: #ffffff; /* dark mode: white */
+  }
+
+  .welcome-date {
+    color: rgba(255, 255, 255, 0.8); /* dark mode: white */
+  }
+}
+
 
 .live-clock {
   display: flex;
@@ -1587,11 +1600,18 @@ th {
 
 .clock-date {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(15, 23, 42, 0.75); /* light mode: black */
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 650;
 }
+
+@media (prefers-color-scheme: dark) {
+  .clock-date {
+    color: rgba(255, 255, 255, 0.8); /* dark mode: white */
+  }
+}
+
 
 /* Device Logins */
 .device-badge {
