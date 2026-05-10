@@ -180,8 +180,43 @@
             </g>
           </svg>
         </div>
-        <h2 id="greetingText">Hello, Master Noel!</h2>
-        <p id="greetingSubtext">Good Morning</p>
+        <h2 id="greetingText" 
+    style="
+      background: linear-gradient(270deg, #0b5f59, #16a394, #0b5f59);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 6s ease infinite;
+      font-weight: bold;
+    ">
+    Hello, Master Noel!
+</h2>
+
+<p id="greetingSubtext"
+   style="
+      background: linear-gradient(270deg, #21a198, #16a394, #0b5f59);
+      background-size: 400% 400%;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradientMove 6s ease infinite;
+   ">
+   Good Morning
+</p>
+
+<style>
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+</style>
+
       </div>
     </div>
 
@@ -189,7 +224,7 @@
       <div class="brand sidebar-header">
         <div class="brand-mark">PV</div>
         <div class="brand-text">
-          <h1>Personal Vault</h1>
+          <h1 class="gradient-text">Personal Vault</h1>
           <p>Encrypted cloud account system</p>
         </div>
         <button id="closeMenuBtn" class="btn secondary small sidebar-close" type="button" aria-label="Close menu">Close</button>
