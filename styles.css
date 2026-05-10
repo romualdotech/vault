@@ -929,6 +929,8 @@ th {
   top: 0;
   z-index: 1;
   border-bottom: 2px solid var(--line);
+  vertical-align: middle;
+  line-height: 1.2;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -936,6 +938,121 @@ th {
     background: rgba(15, 26, 46, 0.55);
   }
 }
+
+/* Table polish (desktop-first). Mobile spacing is handled by existing breakpoints. */
+@media (min-width: 941px) {
+  #accountsView .records table {
+    border-radius: 16px;
+  }
+
+  #accountsView .records thead th,
+  #accountsView .records tbody td {
+    padding: 14px 16px;
+    vertical-align: middle;
+    line-height: 1.35;
+  }
+
+  /* Better column spacing for the 5-column account/password table */
+  #accountsView .records table th:nth-child(1),
+  #accountsView .records table td:nth-child(1) {
+    width: 28%;
+    padding-left: 18px;
+  }
+
+  #accountsView .records table th:nth-child(2),
+  #accountsView .records table td:nth-child(2) {
+    width: 14%;
+  }
+
+  #accountsView .records table th:nth-child(3),
+  #accountsView .records table td:nth-child(3) {
+    width: 22%;
+  }
+
+  #accountsView .records table th:nth-child(4),
+  #accountsView .records table td:nth-child(4) {
+    width: 20%;
+  }
+
+  #accountsView .records table th:nth-child(5),
+  #accountsView .records table td:nth-child(5) {
+    width: 16%;
+    padding-right: 18px;
+  }
+
+  /* Keep inner content from sticking together */
+  #accountsView .records td:nth-child(4) .password-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  #accountsView .records td:nth-child(4) .password-cell .masked {
+    min-width: 110px;
+    white-space: nowrap;
+  }
+
+  /* Actions buttons: force a single horizontal row with consistent gap */
+  #accountsView .records td:nth-child(5) {
+    white-space: nowrap;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+
+  /* Buttons live inside the Actions cell; style the inner wrapper instead of the <td> */
+  #accountsView .records td:nth-child(5) button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    margin: 0;
+    flex: 0 0 auto;
+  }
+
+  /* Create a reliable horizontal gap between the buttons */
+  #accountsView .records td:nth-child(5) button + button {
+    margin-left: 10px;
+  }
+
+  /* Ensure td content baseline alignment */
+  #accountsView .records td:nth-child(5) {
+    vertical-align: middle;
+  }
+
+
+
+  /* Hover: subtle, professional lift */
+  #accountsView .records tbody tr {
+    transition: background 160ms var(--ease), box-shadow 160ms var(--ease), border-color 160ms var(--ease), transform 160ms var(--ease);
+  }
+
+  #accountsView .records tbody tr:hover {
+    background: rgba(15, 118, 110, 0.10);
+  }
+}
+
+/* Small screen tweaks (keep existing stacking behavior but improve spacing) */
+@media (max-width: 940px) {
+  #accountsView .records table th,
+  #accountsView .records table td {
+    padding: 12px 12px;
+  }
+
+  #accountsView .records td:nth-child(5) {
+    /* allow buttons to wrap neatly on narrower screens */
+    white-space: normal;
+  }
+}
+
+@media (max-width: 680px) {
+  /* Ensure action buttons don't jam on stacked layout */
+  #accountsView .records td:nth-child(5) {
+    gap: 8px;
+  }
+}
+
 
 .empty {
   padding: 34px 16px;
