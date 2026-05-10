@@ -1171,6 +1171,21 @@ function switchView(id) {
   });
 }
 
+function setSidebarOpen(isOpen) {
+  const app = $("appScreen");
+  const sidebar = app.querySelector(".sidebar");
+  app.classList.toggle("sidebar-open", isOpen);
+  app.setAttribute("aria-expanded", isOpen.toString());
+  if (sidebar) {
+    sidebar.setAttribute("aria-hidden", (!isOpen).toString());
+  }
+}
+
+function toggleSidebar() {
+  const app = $("appScreen");
+  setSidebarOpen(!app.classList.contains("sidebar-open"));
+}
+
 function bindEvents() {
   $("googleSignInBtn").addEventListener("click", signInWithGoogle);
   $("sendMfaCodeBtn").addEventListener("click", sendMfaSignInCode);
@@ -1179,6 +1194,8 @@ function bindEvents() {
   $("lockBtn").addEventListener("click", lockVault);
   $("signOutBtn").addEventListener("click", () => signOut(state.auth));
   $("gateSignOutBtn").addEventListener("click", () => signOut(state.auth));
+  $("menuToggleBtn").addEventListener("click", toggleSidebar);
+  $("closeMenuBtn").addEventListener("click", () => setSidebarOpen(false));
   $("forgotMasterBtn").addEventListener("click", () => {
     if (state.user) startResetFlow();
   });
@@ -1261,7 +1278,10 @@ function bindEvents() {
   $("search").addEventListener("input", render);
   $("categoryFilter").addEventListener("change", render);
   document.querySelectorAll(".nav button").forEach((button) => {
-    button.addEventListener("click", () => switchView(button.dataset.view));
+    button.addEventListener("click", () => {
+      switchView(button.dataset.view);
+      setSidebarOpen(false);
+    });
   });
   $("exportBtn").addEventListener("click", () => {
     const blob = new Blob([JSON.stringify(state.cloudContainer, null, 2)], { type: "application/json" });
